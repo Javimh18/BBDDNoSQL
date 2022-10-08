@@ -1,0 +1,66 @@
+# Creación de las constraints
+
+CREATE CONSTRAINT UniqueAsignatura ON (a:Asignatura) ASSERT a.id IS UNIQUE
+
+CREATE CONSTRAINT UniqueEstudiante ON (e:Estudiante) ASSERT e.id IS UNIQUE
+
+CREATE CONSTRAINT UniqueProfesor ON (p:Profesor) ASSERT p.id IS UNIQUE
+
+# Carga de los CSV que contienen los datos
+
+LOAD CSV WITH HEADERS FROM 'file:///asignatura.csv' AS row
+WITH toInteger(row.id) AS id, row.nombre AS nombre, toInteger(row.curso) AS curso, toInteger(row.semestre) AS semestre, toInteger(row.creditos) AS creditos
+MERGE (a:Asignatura {id: id})
+  SET a.nombre = nombre, a.curso = curso, a.semestre = semestre, a.creditos = creditos
+RETURN count(a);
+
+LOAD CSV WITH HEADERS FROM 'file:///estudiante.csv' AS row
+WITH toInteger(row.id) AS id, row.nombre AS nombre
+MERGE (e:Estudiante {id: id})
+  SET e.nombre = nombre
+RETURN count(e);
+
+LOAD CSV WITH HEADERS FROM 'file:///profesores.csv' AS row
+WITH toInteger(row.id) AS id, row.nombre AS nombre
+MERGE (p:Profesor {id: id})
+  SET p.nombre = nombre
+RETURN count(p);
+
+# Carga de los CSV de las relaciones
+
+######### ES AMIGO
+
+LOAD CSV WITH HEADERS FROM 'file:///esAmigo.csv' AS row
+WITH toInteger(row.id1) AS id1, toInteger(row.id2) AS id2
+MATCH (e1:Estudiante {id: id1})
+MATCH (e2:Estudiante {id: id2})
+MERGE (e1)-[rel:esAmigo]->(e2)
+RETURN count(rel);
+
+######### TRABAJA CON
+
+LOAD CSV WITH HEADERS FROM 'file:///trabajaCon.csv' AS row
+WITH toInteger(row.id1) AS id1, toInteger(row.id2) AS id2
+MATCH (p1:Profesor {id: id1})
+MATCH (p2:Profesor {id: id2})
+MERGE (p1)-[rel:trabajaCon]->(p2)
+RETURN count(rel);
+
+
+######## IMPARTE 
+
+LOAD CSV WITH HEADERS FROM 'file:///imparte.csv' AS row
+WITH toInteger(row.id1) AS id1, toInteger(row.id2) AS id2, toInteger(row.aula) AS aula
+MATCH (p1:Profesor {id: id1})
+MATCH (a1:Asignatura {id: id2})
+MERGE (p1)-[rel:imparte{aula:aula}]->(a1)
+RETURN count(rel);
+
+######## MATRICULADO
+
+LOAD CSV WITH HEADERS FROM 'file:///matriculado.csv' AS row
+WITH toInteger(row.id1) AS id1, toInteger(row.id2) AS id2, row.calificacion AS calificacion
+MATCH (e1:Estudiante {id: id1})
+MATCH (a1:Asignatura {id: id2})
+MERGE (e1)-[rel:matriculado{calificacion:calificacion}]->(a1)
+RETURN count(rel);
